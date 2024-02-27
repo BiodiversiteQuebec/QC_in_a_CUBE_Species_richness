@@ -13,6 +13,10 @@ library(htmltools)
 library(terra)
 library(rmapshaper)
 
+pal <- colorNumeric(
+    palette = "viridis",
+    domain = c(0, 195) # from 0 to max species
+)
 # ================================================================================
 # server
 # ================================================================================
@@ -35,19 +39,10 @@ server <- function(input, output, session) {
         )
         names(map)[2] <- "richness"
 
-        map <- st_transform(map,
-            crs = st_crs(4326)
-        ) # lat/lon transf for leaflet
-
-        pal <- colorNumeric(
-            palette = "viridis",
-            domain = c(0, 195) # from 0 to max species
-        )
-
         labels <- sprintf(
             "<strong>%s</strong></br> Richesse spécifique = %g", map$reg_name, map$richness
         ) %>% lapply(htmltools::HTML)
-        m <- leaflet(map) %>%
+        leaflet(map) %>%
             addPolygons(
                 fillColor = ~ pal(map$richness),
                 weight = .75,
@@ -70,10 +65,6 @@ server <- function(input, output, session) {
             query = paste0("SELECT reg_name, X", year_rawObs(), ", geom FROM QC_CUBE_Richesse_spe_N02_wkt_raw_obs_SIMPL")
         )
         names(map)[2] <- "richness"
-
-        map <- st_transform(map,
-            crs = st_crs(4326)
-        ) # lat/lon transf for leaflet
 
         pal <- colorNumeric(
             palette = "viridis",
@@ -107,10 +98,6 @@ server <- function(input, output, session) {
         )
         names(map)[2] <- "richness"
 
-        map <- st_transform(map,
-            crs = st_crs(4326)
-        ) # lat/lon transf for leaflet
-
         pal <- colorNumeric(
             palette = "viridis",
             domain = c(0, 195) # from 0 to max species
@@ -143,10 +130,6 @@ server <- function(input, output, session) {
         )
         names(map)[2] <- "richness"
 
-        map <- st_transform(map,
-            crs = st_crs(4326)
-        ) # lat/lon transf for leaflet
-
         pal <- colorNumeric(
             palette = "viridis",
             domain = c(0, 195) # from 0 to max species
@@ -176,15 +159,11 @@ server <- function(input, output, session) {
     # ==> need to fix the pb with projection/localisation of pixels
 
     output$pix10_10Plot <- renderLeaflet({
-        # map <- st_read("/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/TdeB_benchmark_SDM/TdB_bench_maps/species_richness/raw_obs/QC_CUBE_Richesse_spe_10x10_wkt_raw_obs_SIMPL.gpkg",
-        #     query = paste0("SELECT X", year_rawObs(), ", geom FROM QC_CUBE_Richesse_spe_10x10_wkt_raw_obs_SIMPL")
-        # )
+        map <- st_read("/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/TdeB_benchmark_SDM/TdB_bench_maps/species_richness/raw_obs/QC_CUBE_Richesse_spe_10x10_wkt_raw_obs_SIMPL.gpkg",
+            query = paste0("SELECT X", year_rawObs(), ", geom FROM QC_CUBE_Richesse_spe_10x10_wkt_raw_obs_SIMPL")
+        )
         names(map)[1] <- "richness"
         map$reg_name <- 1:nrow(map)
-
-        map <- st_transform(map,
-            crs = st_crs(4326)
-        ) # lat/lon transf for leaflet
 
         pal <- colorNumeric(
             palette = "viridis",
@@ -209,14 +188,8 @@ server <- function(input, output, session) {
                 ),
                 label = labels
             )
-        # print(m)
     })
 }
-
-
-
-
-
 
 
 

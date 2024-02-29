@@ -45,7 +45,7 @@ server <- function(input, output, session) {
         leaflet(map) %>%
             addPolygons(
                 fillColor = ~ pal(map$richness),
-                weight = .75,
+                weight = .01,
                 opacity = 1,
                 color = "grey",
                 fillOpacity = 0.7,
@@ -160,18 +160,13 @@ server <- function(input, output, session) {
 
     output$pix10_10Plot <- renderLeaflet({
         map <- st_read("/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/TdeB_benchmark_SDM/TdB_bench_maps/species_richness/raw_obs/QC_CUBE_Richesse_spe_10x10_wkt_raw_obs_SIMPL.gpkg",
-            query = paste0("SELECT X", year_rawObs(), ", geom FROM QC_CUBE_Richesse_spe_10x10_wkt_raw_obs_SIMPL")
+            query = paste0("SELECT ID, X", year_rawObs(), ", geom FROM QC_CUBE_Richesse_spe_10x10_wkt_raw_obs_SIMPL")
         )
-        names(map)[1] <- "richness"
-        map$reg_name <- 1:nrow(map)
-
-        pal <- colorNumeric(
-            palette = "viridis",
-            domain = c(0, 195) # from 0 to max species
-        )
+        names(map)[2] <- "richness"
+        # map$reg_name <- 1:nrow(map)
 
         labels <- sprintf(
-            "<strong>Pixel # %s</strong></br> Richesse spécifique = %g", map$reg_name, map$richness
+            "<strong>Pixel # %s</strong></br> Richesse spécifique = %g", map$ID, map$richness
         ) %>% lapply(htmltools::HTML)
         m <- leaflet(map) %>%
             addPolygons(
@@ -179,7 +174,7 @@ server <- function(input, output, session) {
                 weight = .75,
                 opacity = 1,
                 color = "grey",
-                fillOpacity = 0.7,
+                fillOpacity = 0.9,
                 highlightOptions = highlightOptions(
                     weight = 1.5,
                     color = "black",

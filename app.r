@@ -33,14 +33,14 @@ ui <- bootstrapPage(
         selectInput(
             "datasource",
             "Source des données",
-            choices = c("occurrences Atlas", "modèles INLA")
+            choices = c("modèles INLA", "occurrences Atlas")
         ),
         sliderInput(
             inputId = "year",
             label = "Année",
             min = 1992,
             max = 2017,
-            value = 1992,
+            value = 1999,
             step = 1
         )
         # ,

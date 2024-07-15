@@ -6,6 +6,7 @@ library(sf)
 library(htmltools)
 library(terra)
 library(RCurl)
+library(shinyWidgets)
 
 pal <- colorNumeric(
     palette = "viridis",
@@ -13,10 +14,10 @@ pal <- colorNumeric(
     na.color = "transparent"
 )
 
-# qc <- st_read(
-#     "/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/TdeB_benchmark_SDM/TdB_bench_maps/species_richness/raw_obs/QC_CUBE_Richesse_spe_N02_wkt_raw_obs_SIMPL_latlon.gpkg",
-#     query = "SELECT geom FROM QC_CUBE_Richesse_spe_N02_wkt_raw_obs_SIMPL_latlon"
-# )
+qc <- st_read(
+    "/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/TdeB_benchmark_SDM/TdB_bench_maps/species_richness/raw_obs/QC_CUBE_Richesse_spe_N02_wkt_raw_obs_SIMPL_latlon.gpkg",
+    query = "SELECT geom FROM QC_CUBE_Richesse_spe_N02_wkt_raw_obs_SIMPL_latlon"
+)
 
 ui <- bootstrapPage(
     tags$style(
@@ -38,15 +39,17 @@ ui <- bootstrapPage(
         ),
         conditionalPanel(
             condition = "input.datasource == 'modèles INLA'",
-            sliderInput(
+            sliderTextInput(
                 inputId = "year",
                 label = "Année",
-                min = 1992,
-                max = 2017,
-                value = 2017,
-                step = 1
+                choices = as.character(1992:2017),
+                selected = "2017",
+                grid = TRUE,
+                force_edges = TRUE
             )
-        )
+        ),
+        # adding the possibility to display QC polygons
+        checkboxInput("qc_poly", label = "Québec polygones", value = FALSE)
         # ,
         # selectInput(
         #     "maptype",
@@ -83,7 +86,7 @@ server <- function(input, output, session) {
 
     # Map visualization
     output$map <- renderLeaflet({
-        leaflet() %>%
+        map <- leaflet() %>%
             addTiles() %>%
             fitBounds(
                 lng1 = -79.76332, # st_bbox(qc)[1],
@@ -93,6 +96,21 @@ server <- function(input, output, session) {
             ) %>%
             addRasterImage(filteredData(), colors = pal, opacity = 0.8) %>%
             addLegend(pal = pal, values = 0:195, title = "Richesse spécifique", position = "bottomright")
+
+        if (input$qc_poly == TRUE) {
+            map <- map %>%
+                addPolygons(
+                    data = qc, weight = 1, color = "grey", fillOpacity = 0.1,
+                    highlightOptions = highlightOptions(
+                        weight = 2,
+                        color = "darkgrey",
+                        fillOpacity = 0.5,
+                        bringToFront = TRUE
+                    )
+                )
+        }
+
+        map
     })
 }
 

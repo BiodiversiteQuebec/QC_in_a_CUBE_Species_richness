@@ -9,7 +9,8 @@ library(RCurl)
 
 pal <- colorNumeric(
     palette = "viridis",
-    domain = c(0, 195) # from 0 to max species0
+    domain = c(0, 195), # from 0 to max species
+    na.color = "transparent"
 )
 
 # qc <- st_read(
@@ -33,15 +34,18 @@ ui <- bootstrapPage(
         selectInput(
             "datasource",
             "Source des données",
-            choices = c("modèles INLA", "cartes eBird", "cartes Boulanger", "occurrences Atlas")
+            choices = c("modèles INLA", "cartes eBird", "cartes Boulanger") #
         ),
-        sliderInput(
-            inputId = "year",
-            label = "Année",
-            min = 1992,
-            max = 2017,
-            value = 1999,
-            step = 1
+        conditionalPanel(
+            condition = "input.datasource == 'modèles INLA'",
+            sliderInput(
+                inputId = "year",
+                label = "Année",
+                min = 1992,
+                max = 2017,
+                value = 2017,
+                step = 1
+            )
         )
         # ,
         # selectInput(
@@ -60,18 +64,18 @@ server <- function(input, output, session) {
 
     # Filtering data for map creation
     filteredData <- reactive({
-        if (input$datasource == "modèles INLA") {
-            path <- paste0("/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_inla/rs_inla_", year_obs(), ".tif")
-            print(path)
-            map <- rast(path)
-        }
-        if (input$datasource == "cartes eBird") {
-            path <- paste0("/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_ebird.tif")
-            print(path)
-            map <- rast(path)
-        }
         if (input$datasource == "cartes Boulanger") {
-            path <- paste0("/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_Boulanger.tif")
+            path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_Boulanger.tif"
+            print(path)
+            map <- rast(path)
+            print(map)
+        } else if (input$datasource == "cartes eBird") {
+            path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_ebird.tif"
+            print(path)
+            map <- rast(path)
+            print(map)
+        } else if (input$datasource == "modèles INLA") {
+            path <- paste0("https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_inla/rs_inla_", year_obs(), ".tif")
             print(path)
             map <- rast(path)
         }
@@ -79,7 +83,6 @@ server <- function(input, output, session) {
 
     # Map visualization
     output$map <- renderLeaflet({
-        # pal_inla <- colorNumeric(c("#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026"), values(filteredData()), na.color = "transparent")
         leaflet() %>%
             addTiles() %>%
             fitBounds(
@@ -88,11 +91,8 @@ server <- function(input, output, session) {
                 lng2 = -56.93521, # st_bbox(qc)[3],
                 lat2 = 62.58192 # st_bbox(qc)[4]
             ) %>%
-            addRasterImage(filteredData())
-
-        # addRasterImage(filteredData(), colors = pal_inla, opacity = 0.8)
-        # %>%
-        # addLegend(pal = pal_inla, values = values(filteredData()), title = "Richesse spécifique", position = "bottomright")
+            addRasterImage(filteredData(), colors = pal, opacity = 0.8) %>%
+            addLegend(pal = pal, values = 0:195, title = "Richesse spécifique", position = "bottomright")
     })
 }
 

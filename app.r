@@ -49,7 +49,7 @@ ui <- bootstrapPage(
             )
         ),
         # adding the possibility to display QC polygons
-        checkboxInput("qc_poly", label = "Québec polygones", value = FALSE)
+        checkboxInput("qc_poly", label = "échelles spatiales", value = FALSE)
         # ,
         # selectInput(
         #     "maptype",

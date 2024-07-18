@@ -1,24 +1,6 @@
-#### Packages ####
-# -------------- #
-library(shiny)
-library(leaflet)
-library(sf)
-library(htmltools)
-library(terra)
-library(RCurl)
-library(shinyWidgets)
-
-pal <- colorNumeric(
-    palette = "viridis",
-    domain = c(0, 195), # from 0 to max species
-    na.color = "transparent"
-)
-
-qc <- st_read(
-    "/vsicurl/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/TdeB_benchmark_SDM/TdB_bench_maps/species_richness/raw_obs/QC_CUBE_Richesse_spe_N02_wkt_raw_obs_SIMPL_latlon.gpkg",
-    query = "SELECT geom FROM QC_CUBE_Richesse_spe_N02_wkt_raw_obs_SIMPL_latlon"
-)
-
+if (!exists("pal")) {
+    source("data_app.r")
+}
 ui <- bootstrapPage(
     tags$style(
         type = "text/css",
@@ -35,7 +17,7 @@ ui <- bootstrapPage(
         selectInput(
             "datasource",
             "Source des données",
-            choices = c("modèles INLA", "cartes eBird", "cartes Boulanger") #
+            choices = c("modèles INLA", "cartes eBird", "cartes Boulanger", "données Atlas") #
         ),
         conditionalPanel(
             condition = "input.datasource == 'modèles INLA'",
@@ -49,13 +31,16 @@ ui <- bootstrapPage(
             )
         ),
         # adding the possibility to display QC polygons
-        checkboxInput("qc_poly", label = "échelles spatiales", value = FALSE)
-        # ,
-        # selectInput(
-        #     "maptype",
-        #     "Niveau spatial",
-        #     choices = c("Provinces naturelles", "Régions naturelles", "Niveaux physiographiques", "Districts écologiques", "10x10 km")
-        # )
+        selectInput(
+            "qc_poly",
+            "Divisions spatiales",
+            choices = list("Aucune",
+                "Ecodivisions" = list("Ecozones", "Ecoprovinces", "Ecorégions", "Ecodistricts"),
+                "Cadre écologique de référence" = list("Provinces naturelles", "Régions naturelles", "Ensembles physiographiques", "Districts écologiques", "Ensembles topographiques"),
+                "Autres" = list("10x10 km")
+            ),
+            selected = "Aucune"
+        )
     )
 )
 
@@ -68,19 +53,44 @@ server <- function(input, output, session) {
     # Filtering data for map creation
     filteredData <- reactive({
         if (input$datasource == "cartes Boulanger") {
-            path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_Boulanger.tif"
-            print(path)
-            map <- rast(path)
-            print(map)
+            boul
         } else if (input$datasource == "cartes eBird") {
-            path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_ebird.tif"
-            print(path)
-            map <- rast(path)
-            print(map)
+            ebird
         } else if (input$datasource == "modèles INLA") {
             path <- paste0("https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_inla/rs_inla_", year_obs(), ".tif")
             print(path)
             map <- rast(path)
+        } else if (input$datasource == "données Atlas") {
+            path <- "/home/local/USHERBROOKE/juhc3201/BDQC-GEOBON/data/QUEBEC_in_a_cube/Richesse_spe_version_2/data_test/birds_2020.gpkg" # verifier le crs et ne fonctionne pas dans addRasterImage
+            print(path)
+            map <- st_read(path)
+        }
+    })
+
+    # Selection of Qc polygons
+    qc_poly <- reactive({
+        if (input$qc_poly == "Ecozones") {
+            ecoz
+        } else if (input$qc_poly == "Ecoprovinces") {
+            ecop
+        } else if (input$qc_poly == "Ecorégions") {
+            ecor
+        } else if (input$qc_poly == "Ecodistricts") {
+            ecod
+        } else if (input$qc_poly == "Provinces naturelles") {
+            pronat
+        } else if (input$qc_poly == "Régions naturelles") {
+            regnat
+        } else if (input$qc_poly == "Ensembles physiographiques") {
+            ensphy
+        } else if (input$qc_poly == "Districts écologiques") {
+            diseco
+        } else if (input$qc_poly == "Ensembles topographiques") {
+            enstop
+        } else if (input$qc_poly == "10x10 km") {
+            pix
+        } else if (input$qc_poly == "Aucune") {
+            path <- NULL
         }
     })
 
@@ -97,19 +107,19 @@ server <- function(input, output, session) {
             addRasterImage(filteredData(), colors = pal, opacity = 0.8) %>%
             addLegend(pal = pal, values = 0:195, title = "Richesse spécifique", position = "bottomright")
 
-        if (input$qc_poly == TRUE) {
+
+        if (!is.null(qc_poly())) {
             map <- map %>%
                 addPolygons(
-                    data = qc, weight = 1, color = "grey", fillOpacity = 0.1,
+                    data = qc_poly(), weight = 1, color = "white", fillOpacity = 0.1,
                     highlightOptions = highlightOptions(
                         weight = 2,
-                        color = "darkgrey",
+                        color = "white",
                         fillOpacity = 0.5,
                         bringToFront = TRUE
                     )
                 )
         }
-
         map
     })
 }

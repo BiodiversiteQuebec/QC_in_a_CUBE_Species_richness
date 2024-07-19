@@ -16,10 +16,10 @@ pal <- colorNumeric(
 
 # Loading rasters
 # ---> Boulanger
-path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_Boulanger.tif"
+path <- "/vsicurl_streaming/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_Boulanger_cog.tif"
 boul <- rast(path)
 # ---> eBird
-path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_ebird.tif"
+path <- "/vsicurl_streaming/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_ebird_cog.tif"
 ebird <- rast(path)
 
 # Loading vectors

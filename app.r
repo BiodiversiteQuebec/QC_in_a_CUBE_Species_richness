@@ -57,7 +57,7 @@ server <- function(input, output, session) {
         } else if (input$datasource == "cartes eBird") {
             ebird
         } else if (input$datasource == "modèles INLA") {
-            path <- paste0("https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_inla/rs_inla_", year_obs(), ".tif")
+            path <- paste0("/vsicurl_streaming/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_inla/rs_inla_", year_obs(), "_cog.tif")
             print(path)
             map <- rast(path)
         } else if (input$datasource == "données Atlas") {

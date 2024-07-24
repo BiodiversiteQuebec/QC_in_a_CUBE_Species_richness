@@ -1,6 +1,7 @@
 if (!exists("pal")) {
     source("data_app.r")
 }
+
 ui <- bootstrapPage(
     tags$style(
         type = "text/css",
@@ -35,11 +36,18 @@ ui <- bootstrapPage(
             "qc_poly",
             "Divisions spatiales",
             choices = list("Aucune",
-                "Ecodivisions" = list("Ecozones", "Ecoprovinces", "Ecorégions", "Ecodistricts"),
-                "Cadre écologique de référence" = list("Provinces naturelles", "Régions naturelles", "Ensembles physiographiques", "Districts écologiques", "Ensembles topographiques"),
-                "Autres" = list("10x10 km")
+                "Ecodivisions" = list("Ecozones", "Ecoprovinces", "Ecorégions", "Ecodistricts")
+                # ,
+                # "Cadre écologique de référence" = list("Provinces naturelles", "Régions naturelles", "Ensembles physiographiques", "Districts écologiques", "Ensembles topographiques"),
+                # "Autres" = list("10x10 km")
             ),
             selected = "Aucune"
+        ),
+        conditionalPanel(
+            condition = "input.datasource == 'modèles INLA' && input.qc_poly != 'Aucune'",
+            plotOutput(
+                outputId = "rs_trend"
+            )
         )
     )
 )
@@ -77,24 +85,38 @@ server <- function(input, output, session) {
             ecor
         } else if (input$qc_poly == "Ecodistricts") {
             ecod
-        } else if (input$qc_poly == "Provinces naturelles") {
-            pronat
-        } else if (input$qc_poly == "Régions naturelles") {
-            regnat
-        } else if (input$qc_poly == "Ensembles physiographiques") {
-            ensphy
-        } else if (input$qc_poly == "Districts écologiques") {
-            diseco
-        } else if (input$qc_poly == "Ensembles topographiques") {
-            enstop
-        } else if (input$qc_poly == "10x10 km") {
-            pix
+            # } else if (input$qc_poly == "Provinces naturelles") {
+            #     pronat
+            # } else if (input$qc_poly == "Régions naturelles") {
+            #     regnat
+            # } else if (input$qc_poly == "Ensembles physiographiques") {
+            #     ensphy
+            # } else if (input$qc_poly == "Districts écologiques") {
+            #     diseco
+            # } else if (input$qc_poly == "Ensembles topographiques") {
+            #     enstop
+            # } else if (input$qc_poly == "10x10 km") {
+            #     pix
         } else if (input$qc_poly == "Aucune") {
             path <- NULL
         }
     })
 
+    df_poly <- reactive({
+        if (input$qc_poly == "Ecozones") {
+            df_trend <- eco_rs[eco_rs$poly_name == "ecoz", ]
+        } else if (input$qc_poly == "Ecoprovinces") {
+            df_trend <- eco_rs[eco_rs$poly_name == "ecop", ]
+        } else if (input$qc_poly == "Ecorégions") {
+            df_trend <- eco_rs[eco_rs$poly_name == "ecor", ]
+        } else if (input$qc_poly == "Ecodistricts") {
+            df_trend <- eco_rs[eco_rs$poly_name == "ecod", ]
+        }
+    })
+
     # Map visualization
+    rv <- reactiveVal()
+
     output$map <- renderLeaflet({
         map <- leaflet() %>%
             addTiles() %>%
@@ -109,9 +131,19 @@ server <- function(input, output, session) {
 
 
         if (!is.null(qc_poly())) {
+            labels <- sprintf(
+                "<b>Poly ID</b> %s <br/> Tendance de la richesse spécifique entre 1992 et 2017 : <b>+42</b>",
+                qc_poly()$ID
+            ) %>% lapply(htmltools::HTML)
+
             map <- map %>%
                 addPolygons(
-                    data = qc_poly(), weight = 1, color = "white", fillOpacity = 0.1,
+                    data = qc_poly(),
+                    weight = 1,
+                    color = "white",
+                    fillOpacity = 0.1,
+                    label = labels,
+                    layerId = ~ID,
                     highlightOptions = highlightOptions(
                         weight = 2,
                         color = "white",
@@ -122,8 +154,25 @@ server <- function(input, output, session) {
         }
         map
     })
+    ### Plot the rs trend when clicking on a polygon
+    observeEvent(input$map_shape_click, {
+        rv(input$map_shape_click$id)
+        print(rv())
+    })
+
+    output$rs_trend <- renderPlot(
+        {
+            if (is.null(rv())) {
+                return(NULL)
+            }
+            df_plot <- df_poly()[df_poly()$poly_ID == rv(), ]
+            plot(df_plot$year, df_plot$spe_rich, xlab = "Année", ylab = "Richesse spécifique", type = "b")
+        },
+        bg = "transparent"
+    )
 }
 
+shinyApp(ui = ui, server = server)
 
 # else {
 #     filteredData <- reactive({
@@ -213,5 +262,3 @@ server <- function(input, output, session) {
 #             )
 #     })
 # }
-
-shinyApp(ui = ui, server = server)

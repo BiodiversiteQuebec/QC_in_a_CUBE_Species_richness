@@ -134,3 +134,23 @@ leaflet() %>%
     groupOptions("niv3", zoomLevels = 18:19) %>%
     groupOptions("niv4", zoomLevels = 19:20) %>%
     groupOptions("nivPix", zoomLevels = 20:21)
+
+
+### Test courbes rs par ecopolygones ####
+library(dplyr)
+eco_rs <- read.table("https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/data/ecopolygons_rs.txt")
+
+eco_gp <- eco_rs %>% group_by(poly_name, poly_ID)
+eco_spl <- eco_gp %>% group_split()
+
+
+ecoz <- eco_rs[eco_rs$poly_name == "ecoz", ]
+ecoz_spl <- ecoz %>%
+    group_by(poly_name, poly_ID) %>%
+    group_split()
+
+x11()
+par(mfrow = c(3, 3))
+lapply(ecoz_spl, function(x) {
+    plot(x$year, x$spe_rich, type = "b")
+})

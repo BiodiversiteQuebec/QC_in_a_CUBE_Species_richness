@@ -1,2 +1,5 @@
 ### Dev of visualisation tool for species richness in Qc
- - First layer of Species richness visualisationis based on raw data, used by V. Bellavance for INLA-SDM analyses
+
+- Species richness visualisations based on INLA-SDM analyses (V. Bellavance - taxa group = birds)
+- Species richness visualisations based on ebird maps (taxa group = birds)
+- Species richness visualisations based on Boulanger analyses (taxa group = trees)

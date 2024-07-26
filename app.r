@@ -18,7 +18,7 @@ ui <- bootstrapPage(
         selectInput(
             "datasource",
             "Source des données",
-            choices = c("modèles INLA", "cartes eBird", "cartes Boulanger", "données Atlas") #
+            choices = c("modèles INLA", "cartes MELCCFP", "cartes eBird", "cartes Boulanger", "données Atlas") #
         ),
         conditionalPanel(
             condition = "input.datasource == 'modèles INLA'",
@@ -48,7 +48,20 @@ ui <- bootstrapPage(
             plotOutput(
                 outputId = "rs_trend"
             )
-        )
+        ),
+        conditionalPanel(
+            condition = "input.datasource == 'cartes MELCCFP'",
+            selectInput(
+                "melccfp_group",
+                "Groupe taxonomique",
+                choices = c(
+                    "Mammifères" = "mammiferes",
+                    "Reptiles" = "reptiles",
+                    "Amphibiens" = "amphibiens",
+                    "Poissons d'eau douce" = "poissons"
+                )
+            )
+        ),
     )
 )
 
@@ -72,6 +85,10 @@ server <- function(input, output, session) {
             path <- "/home/local/USHERBROOKE/juhc3201/BDQC-GEOBON/data/QUEBEC_in_a_cube/Richesse_spe_version_2/data_test/birds_2020.gpkg" # verifier le crs et ne fonctionne pas dans addRasterImage
             print(path)
             map <- st_read(path)
+        } else if (input$datasource == "cartes MELCCFP") {
+            path <- paste0("/vsicurl_streaming/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_melccfp_", input$melccfp_group, ".tif")
+            print(path)
+            map <- rast(path)
         }
     })
 

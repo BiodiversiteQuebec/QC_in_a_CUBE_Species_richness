@@ -8,12 +8,6 @@ library(terra)
 library(RCurl)
 library(shinyWidgets)
 
-pal <- colorNumeric(
-    palette = "viridis",
-    domain = c(0, 195), # from 0 to max species
-    na.color = "transparent"
-)
-
 # Loading rasters
 # ---> Boulanger
 path <- "/vsicurl_streaming/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_Boulanger_cog.tif"

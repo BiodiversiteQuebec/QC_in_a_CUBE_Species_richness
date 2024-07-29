@@ -1,4 +1,4 @@
-if (!exists("pal")) {
+if (!exists("boul")) {
     source("data_app.r")
 }
 
@@ -92,6 +92,20 @@ server <- function(input, output, session) {
         }
     })
 
+    # Colors for map
+    pal <- reactive({
+        col <- colorNumeric(
+            palette = "viridis",
+            domain = c(0, max(values(filteredData()), na.rm = T)), # from 0 to max species
+            na.color = "transparent"
+        )
+        print(col)
+    })
+    val <- reactive({
+        val <- 0:max(values(filteredData()), na.rm = T)
+        print(val)
+    })
+
     # Selection of Qc polygons
     qc_poly <- reactive({
         if (input$qc_poly == "Ecozones") {
@@ -132,7 +146,7 @@ server <- function(input, output, session) {
     })
 
     # Map visualization
-    rv <- reactiveVal()
+    rv <- reactiveVal() # for plot associated to polygons
 
     output$map <- renderLeaflet({
         map <- leaflet() %>%
@@ -143,8 +157,8 @@ server <- function(input, output, session) {
                 lng2 = -56.93521, # st_bbox(qc)[3],
                 lat2 = 62.58192 # st_bbox(qc)[4]
             ) %>%
-            addRasterImage(filteredData(), colors = pal, opacity = 0.8) %>%
-            addLegend(pal = pal, values = 0:195, title = "Richesse spécifique", position = "bottomright")
+            addRasterImage(filteredData(), colors = pal(), opacity = 0.8) %>%
+            addLegend(pal = pal(), values = val(), title = "Richesse spécifique", position = "bottomright")
 
 
         if (!is.null(qc_poly())) {

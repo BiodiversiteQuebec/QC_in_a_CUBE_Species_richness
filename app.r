@@ -21,6 +21,56 @@ ui <- bootstrapPage(
             choices = c("modèles INLA", "cartes MELCCFP", "cartes eBird", "cartes Boulanger", "données Atlas") #
         ),
         conditionalPanel(
+            condition = "input.datasource == 'cartes MELCCFP'",
+            selectInput(
+                "melccfp_group",
+                "Groupe taxonomique",
+                choices = c(
+                    "Mammifères" = "mammiferes",
+                    "Reptiles" = "reptiles",
+                    "Amphibiens" = "amphibiens",
+                    "Poissons d'eau douce" = "poissons"
+                )
+            )
+        ),
+        conditionalPanel(
+            condition = "input.datasource == 'données Atlas'",
+            selectInput(
+                "atlas_group",
+                "Groupe taxonomique",
+                choices = c(
+                    "Algues" = "Algae",
+                    "Amphibiens" = "Amphibians",
+                    "Angiospermes" = "Amgiosperms",
+                    "Arthropodes" = "Arthropods",
+                    "Autres invertébrés" = "Other_invertebrates",
+                    "Autres plantes" = "Other_plants",
+                    "Autres taxons" = "Other_taxons",
+                    "Bryophytes" = "Bryophytes",
+                    "Conifères" = "Conifers",
+                    "Mycètes" = "Fungi",
+                    "Mammifères" = "Mammals",
+                    "Oiseaux" = "Birds",
+                    "Poissons" = "Fish",
+                    "Reptiles" = "Reptiles",
+                    "Tuniciers" = "Tunicates",
+                    "Inconnus" = "Unknown",
+                    "Cryptogames vasculaires" = "Vascular_cryptogam"
+                )
+            )
+        ),
+        conditionalPanel(
+            condition = "input.datasource == 'données Atlas'",
+            sliderTextInput(
+                inputId = "atlas_year",
+                label = "Année",
+                choices = as.character(1900:2023),
+                selected = "2023",
+                grid = TRUE,
+                force_edges = TRUE
+            )
+        ),
+        conditionalPanel(
             condition = "input.datasource == 'modèles INLA'",
             sliderTextInput(
                 inputId = "year",
@@ -43,25 +93,13 @@ ui <- bootstrapPage(
             ),
             selected = "Aucune"
         ),
+        # RS plot only for the INLA data (to complete with MELCCFP data)
         conditionalPanel(
             condition = "input.datasource == 'modèles INLA' && input.qc_poly != 'Aucune'",
             plotOutput(
                 outputId = "rs_trend"
             )
-        ),
-        conditionalPanel(
-            condition = "input.datasource == 'cartes MELCCFP'",
-            selectInput(
-                "melccfp_group",
-                "Groupe taxonomique",
-                choices = c(
-                    "Mammifères" = "mammiferes",
-                    "Reptiles" = "reptiles",
-                    "Amphibiens" = "amphibiens",
-                    "Poissons d'eau douce" = "poissons"
-                )
-            )
-        ),
+        )
     )
 )
 
@@ -82,9 +120,13 @@ server <- function(input, output, session) {
             print(path)
             map <- rast(path)
         } else if (input$datasource == "données Atlas") {
-            path <- "/home/local/USHERBROOKE/juhc3201/BDQC-GEOBON/data/QUEBEC_in_a_cube/Richesse_spe_version_2/data_test/birds_2020.gpkg" # verifier le crs et ne fonctionne pas dans addRasterImage
+            path <- paste0("/vsicurl_streaming/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_atlas/", input$atlas_year, "_", input$atlas_group, "_rs_atlas_2024-07-16.tif") # verifier le crs et ne fonctionne pas dans addRasterImage
             print(path)
-            map <- st_read(path)
+            if (url.exists(path)) {
+                map <- rast(path)
+            } else {
+                map <- rast(ref_ras_ll)
+            }
         } else if (input$datasource == "cartes MELCCFP") {
             path <- paste0("/vsicurl_streaming/https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/rs_melccfp_", input$melccfp_group, ".tif")
             print(path)
@@ -160,7 +202,7 @@ server <- function(input, output, session) {
             addRasterImage(filteredData(), colors = pal(), opacity = 0.8) %>%
             addLegend(pal = pal(), values = val(), title = "Richesse spécifique", position = "bottomright")
 
-
+        # POPUP A TERMINER !
         if (!is.null(qc_poly())) {
             labels <- sprintf(
                 "<b>Poly ID</b> %s <br/> Tendance de la richesse spécifique entre 1992 et 2017 : <b>+42</b>",

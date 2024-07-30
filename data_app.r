@@ -20,16 +20,16 @@ ebird <- rast(path)
 # ---> ecodivisions
 path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/qc_polygons/sf_eco_poly/qc_ecozones_ll.gpkg"
 ecoz <- st_read(path)
-ecoz$ID <- 1:nrow(ecoz)
+names(ecoz)[4] <- "ID"
 path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/qc_polygons/sf_eco_poly/qc_ecoprovinces_ll.gpkg"
 ecop <- st_read(path)
-ecop$ID <- 1:nrow(ecop)
+names(ecop)[4] <- "ID"
 path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/qc_polygons/sf_eco_poly/qc_ecoregions_ll.gpkg"
 ecor <- st_read(path)
-ecor$ID <- 1:nrow(ecor)
+names(ecor)[4] <- "ID"
 path <- "https://object-arbutus.cloud.computecanada.ca/bq-io/acer/qc_polygons/sf_eco_poly/qc_ecodistricts_ll.gpkg"
 ecod <- st_read(path)
-ecod$ID <- 1:nrow(ecod)
+names(ecod)[4] <- "ID"
 
 ### !!!!! voir la concordance des IDs avec ce qui a été utilisé dans narval
 
@@ -49,3 +49,17 @@ ecod$ID <- 1:nrow(ecod)
 
 # RS trends
 eco_rs <- read.table("https://object-arbutus.cloud.computecanada.ca/bq-io/acer/ebv/data/ecopolygons_rs.txt")
+
+#### Blank map when rs map does not exist ####
+bb <- st_bbox(ecoz)
+
+ref_ras <- rast(
+    xmin = bb[1],
+    xmax = bb[3],
+    ymin = bb[2],
+    ymax = bb[4],
+    resolution = 10000
+)
+crs(ref_ras) <- "epsg:32198"
+values(ref_ras) <- 1
+ref_ras_ll <- terra::project(ref_ras, "epsg:4326")
